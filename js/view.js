@@ -8,7 +8,7 @@ renderUser(session);
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
 const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
-const WEBHOOK_TOKEN = 'triaxis_wh_7k4m2p9x';
+const WEBHOOK_TOKEN = import.meta.env.VITE_WEBHOOK_TOKEN;
 
 const id = new URLSearchParams(location.search).get('id');
 if (!id) { window.location.href = '/dashboard.html'; }
