@@ -1,6 +1,6 @@
 import { supabase } from './supabase.js';
 import { requireAuth, renderUser, logout } from './guard.js';
-import { downloadPDF, getPDFBase64 } from './pdf.js';
+import { downloadPDF, previewPDF, getPDFBase64 } from './pdf.js';
 
 const session = await requireAuth();
 if (!session) throw new Error('Not authenticated');
@@ -50,16 +50,24 @@ function renderPreview(inv) {
         <div class="inv-meta-label">Bill To</div>
         <div class="inv-meta-value">
           <strong>${inv.client_name}</strong>
-          ${inv.client_company || ''}
+          ${inv.client_company ? `<br>${inv.client_company}` : ''}
           ${inv.client_email ? `<br>${inv.client_email}` : ''}
           ${inv.client_address ? `<br>${inv.client_address}` : ''}
+        </div>
+      </div>
+      <div>
+        <div class="inv-meta-label">Ship To</div>
+        <div class="inv-meta-value">
+          <strong>${inv.ship_to || inv.client_name}</strong>
         </div>
       </div>
       <div>
         <div class="inv-meta-label">Invoice Details</div>
         <div class="inv-meta-value">
           <strong>Issue Date:</strong> ${inv.issue_date || '—'}<br>
+          ${inv.payment_terms ? `<strong>Payment Terms:</strong> ${inv.payment_terms}<br>` : ''}
           <strong>Due Date:</strong> ${inv.due_date || '—'}<br>
+          ${inv.po_number ? `<strong>PO Number:</strong> ${inv.po_number}<br>` : ''}
           ${isPaid ? `<strong>Paid:</strong> ${inv.paid_at ? new Date(inv.paid_at).toLocaleDateString('en-GB') : '—'}<br>` : ''}
           ${isPaid && inv.payment_method ? `<strong>Method:</strong> ${inv.payment_method}<br>` : ''}
           <strong>Currency:</strong> ${inv.currency}
@@ -105,6 +113,12 @@ function renderPreview(inv) {
         <div class="inv-notes-text">${inv.notes}</div>
       </div>
     ` : ''}
+    ${inv.terms ? `
+      <div class="inv-notes">
+        <div class="inv-notes-label">Terms</div>
+        <div class="inv-notes-text">${inv.terms}</div>
+      </div>
+    ` : ''}
 
     <div class="inv-footer">
       Thank you for your business — TriAxis IT Solutions · triaxistechnologies.com
@@ -139,6 +153,11 @@ async function load() {
   renderPreview(invoice);
   renderSidebar(invoice);
 }
+
+// Preview PDF
+document.getElementById('btnPreview').addEventListener('click', async () => {
+  await previewPDF(invoice, invoice.status === 'paid');
+});
 
 // Download PDF
 document.getElementById('btnDownload').addEventListener('click', async () => {

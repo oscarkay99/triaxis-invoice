@@ -112,16 +112,21 @@ function collectData(status) {
     client_company: document.getElementById('clientCompany').value.trim() || null,
     client_email: document.getElementById('clientEmail').value.trim() || null,
     client_address: document.getElementById('clientAddress').value.trim() || null,
+    ship_to: document.getElementById('shipTo').value.trim() || null,
     currency: document.getElementById('currency').value,
     issue_date: document.getElementById('issueDate').value,
     due_date: document.getElementById('dueDate').value || null,
+    payment_terms: document.getElementById('paymentTerms').value || null,
+    po_number: document.getElementById('poNumber').value.trim() || null,
     items: items.filter(i => i.description),
     subtotal,
     tax_rate: taxRate,
     tax_amount: taxAmt,
     discount,
     total,
+    amount_paid: parseFloat(document.getElementById('amountPaid').value) || 0,
     notes: document.getElementById('notes').value.trim() || null,
+    terms: document.getElementById('terms').value.trim() || null,
     status,
     updated_at: new Date().toISOString(),
   };
@@ -162,7 +167,12 @@ async function init() {
       document.getElementById('clientAddress').value = data.client_address || '';
       document.getElementById('taxRate').value = data.tax_rate || 0;
       document.getElementById('discountAmt').value = data.discount || 0;
+      document.getElementById('amountPaid').value = data.amount_paid || 0;
+      document.getElementById('paymentTerms').value = data.payment_terms || '';
+      document.getElementById('poNumber').value = data.po_number || '';
+      document.getElementById('shipTo').value = data.ship_to || '';
       document.getElementById('notes').value = data.notes || '';
+      document.getElementById('terms').value = data.terms || '';
       items = data.items && data.items.length ? data.items : [{ description: '', qty: 1, unit_price: 0 }];
     }
   } else {

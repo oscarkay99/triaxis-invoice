@@ -1,10 +1,10 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const DARK = [30, 30, 30];
+const GRAY = [120, 120, 120];
+const LIGHT_GRAY = [210, 210, 210];
 const NAVY = [0, 45, 85];
-const ORANGE = [244, 122, 32];
-const MUTED = [95, 113, 132];
-const LIGHT = [240, 244, 248];
 
 function fmt(amount, currency) {
   const sym = currency === 'GHS' ? '₵' : '$';
@@ -28,185 +28,249 @@ async function loadLogo() {
 export async function generatePDF(invoice, isReceipt = false) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = 14;
   const logoData = await loadLogo();
 
-  // Header background
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 0, W, 46, 'F');
-
-  // Logo image or text fallback
-  if (logoData) {
-    doc.addImage(logoData, 'PNG', 12, 6, 38, 19);
-  } else {
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('TRIAXIS IT SOLUTIONS', 14, 17);
-  }
-
-  doc.setTextColor(168, 196, 224);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.text('14 Independence Avenue, Accra, Ghana', 14, 28);
-  doc.text('info@triaxistechnologies.com  |  +233 30 123 4567', 14, 33);
-  doc.text('triaxistechnologies.com', 14, 38);
-
-  // Invoice / Receipt title
-  doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
   const title = isReceipt ? 'RECEIPT' : 'INVOICE';
-  doc.text(title, W - 14, 18, { align: 'right' });
+  const amountPaid = Number(invoice.amount_paid) || 0;
+  const balanceDue = Math.max(0, Number(invoice.total) - amountPaid);
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(168, 196, 224);
-  doc.text(`#${invoice.invoice_number}`, W - 14, 26, { align: 'right' });
-
-  let y = 56;
-
-  // Dates + Status block
-  doc.setFillColor(...LIGHT);
-  doc.roundedRect(14, y, W - 28, 24, 3, 3, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED);
-  doc.text('ISSUE DATE', 20, y + 7);
-  doc.text('DUE DATE', 70, y + 7);
-  if (isReceipt) doc.text('PAID DATE', 120, y + 7);
-  doc.text('STATUS', W - 50, y + 7);
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(...NAVY);
-  doc.text(invoice.issue_date || '—', 20, y + 16);
-  doc.text(invoice.due_date || '—', 70, y + 16);
-  if (isReceipt && invoice.paid_at) {
-    doc.text(new Date(invoice.paid_at).toLocaleDateString('en-GB'), 120, y + 16);
+  // ── HEADER: logo left, title right ──────────────────────────────
+  if (logoData) {
+    doc.addImage(logoData, 'PNG', M, M, 44, 22);
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(...NAVY);
+    doc.text('TRIAXIS IT SOLUTIONS', M, 22);
   }
 
-  // Status badge
-  const statusColor = invoice.status === 'paid' ? [22, 163, 74] : invoice.status === 'overdue' ? [220, 38, 38] : [217, 119, 6];
-  doc.setTextColor(...statusColor);
-  doc.text((invoice.status || 'unpaid').toUpperCase(), W - 50, y + 16);
-
-  y += 32;
-
-  // Bill To
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...MUTED);
-  doc.text('BILL TO', 14, y);
-  y += 6;
+  doc.setFontSize(30);
+  doc.setTextColor(...DARK);
+  doc.text(title, W - M, 20, { align: 'right' });
 
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...GRAY);
+  doc.text(`# ${invoice.invoice_number}`, W - M, 28, { align: 'right' });
+
+  // ── COMPANY INFO ────────────────────────────────────────────────
+  let y = 42;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.setTextColor(...NAVY);
-  doc.text(invoice.client_name || '—', 14, y);
-  y += 5;
+  doc.setTextColor(...DARK);
+  doc.text('TriAxis IT Solutions', M, y);
+  y += 4.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+  doc.text('14 Independence Avenue, Accra, Ghana', M, y);
+  y += 4;
+  doc.text('info@triaxistechnologies.com  ·  triaxistechnologies.com', M, y);
+  y += 7;
 
+  doc.setDrawColor(...LIGHT_GRAY);
+  doc.setLineWidth(0.3);
+  doc.line(M, y, W - M, y);
+  y += 8;
+
+  // ── BILL TO / SHIP TO + METADATA TABLE ──────────────────────────
+  const sectionY = y;
+  const halfW = (W / 2) - M - 4;
+  const billX = M;
+  const shipX = M + halfW / 2 + 2;
+  const metaX = W / 2 + 6;
+  const metaW = W - M - metaX;
+  const rowH = 8;
+
+  // Labels
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...GRAY);
+  doc.text('Bill To', billX, sectionY);
+  doc.text('Ship To', shipX, sectionY);
+
+  // Names
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...DARK);
+  doc.text(invoice.client_name || '—', billX, sectionY + 5.5);
+  doc.text(invoice.ship_to || invoice.client_name || '—', shipX, sectionY + 5.5);
+
+  let leftY = sectionY + 11;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
-  if (invoice.client_company) { doc.text(invoice.client_company, 14, y); y += 5; }
-  if (invoice.client_email) { doc.text(invoice.client_email, 14, y); y += 5; }
-  if (invoice.client_address) { doc.text(invoice.client_address, 14, y); y += 5; }
+  doc.setTextColor(...GRAY);
+  if (invoice.client_company) { doc.text(invoice.client_company, billX, leftY); leftY += 4.5; }
+  if (invoice.client_address) { doc.text(invoice.client_address, billX, leftY); leftY += 4.5; }
+  if (invoice.client_email)   { doc.text(invoice.client_email, billX, leftY); leftY += 4.5; }
 
-  y += 6;
+  // Metadata rows (right side)
+  const metaRows = [
+    ['Date',            invoice.issue_date || '—'],
+    ['Payment Terms',   invoice.payment_terms || '—'],
+    ['Due Date',        invoice.due_date || '—'],
+    ['PO Number',       invoice.po_number || '—'],
+  ];
 
-  // Line items table
+  metaRows.forEach(([label, value], i) => {
+    const ry = sectionY + i * rowH;
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.setLineWidth(0.2);
+    doc.rect(metaX, ry, metaW, rowH);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GRAY);
+    doc.text(label, metaX + 3, ry + 5.2);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...DARK);
+    doc.text(value, metaX + metaW - 3, ry + 5.2, { align: 'right' });
+  });
+
+  // Balance Due row (highlighted)
+  const balRowY = sectionY + metaRows.length * rowH;
+  const balRowH = 10;
+  doc.setFillColor(235, 242, 250);
+  doc.rect(metaX, balRowY, metaW, balRowH, 'FD');
+  doc.setDrawColor(...LIGHT_GRAY);
+  doc.setLineWidth(0.3);
+  doc.rect(metaX, balRowY, metaW, balRowH);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(...DARK);
+  doc.text('Balance Due', metaX + 3, balRowY + 6.5);
+  doc.setFontSize(11);
+  doc.text(fmt(balanceDue, invoice.currency), metaX + metaW - 3, balRowY + 6.8, { align: 'right' });
+
+  y = Math.max(leftY, sectionY + metaRows.length * rowH + balRowH) + 10;
+
+  doc.setDrawColor(...LIGHT_GRAY);
+  doc.setLineWidth(0.3);
+  doc.line(M, y - 4, W - M, y - 4);
+
+  // ── LINE ITEMS TABLE ────────────────────────────────────────────
   const items = invoice.items || [];
   autoTable(doc, {
     startY: y,
-    head: [['Description', 'Qty', 'Unit Price', 'Total']],
+    head: [['Item', 'Quantity', 'Rate', 'Amount']],
     body: items.map(item => [
       item.description || '',
       item.qty || 1,
       fmt(item.unit_price || 0, invoice.currency),
       fmt((item.qty || 1) * (item.unit_price || 0), invoice.currency),
     ]),
-    headStyles: { fillColor: NAVY, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold' },
-    bodyStyles: { fontSize: 8.5, textColor: [10, 41, 72] },
+    headStyles: {
+      fillColor: [51, 51, 51],
+      textColor: [255, 255, 255],
+      fontSize: 8.5,
+      fontStyle: 'bold',
+    },
+    bodyStyles: { fontSize: 8.5, textColor: DARK },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 'auto' },
-      1: { cellWidth: 18, halign: 'center' },
+      1: { cellWidth: 24, halign: 'center' },
       2: { cellWidth: 32, halign: 'right' },
-      3: { cellWidth: 32, halign: 'right', fontStyle: 'bold' },
+      3: { cellWidth: 32, halign: 'right' },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: M, right: M },
     theme: 'grid',
+    tableLineColor: LIGHT_GRAY,
+    tableLineWidth: 0.2,
   });
 
   y = doc.lastAutoTable.finalY + 8;
 
-  // Totals
-  const totalsX = W - 80;
-  const rows = [
-    ['Subtotal', fmt(invoice.subtotal, invoice.currency)],
-  ];
-  if (Number(invoice.tax_rate) > 0) rows.push([`Tax (${invoice.tax_rate}%)`, fmt(invoice.tax_amount, invoice.currency)]);
-  if (Number(invoice.discount) > 0) rows.push(['Discount', `-${fmt(invoice.discount, invoice.currency)}`]);
+  // ── TOTALS ───────────────────────────────────────────────────────
+  const totalsX = W - 82;
+  const totalsRows = [['Subtotal', fmt(invoice.subtotal, invoice.currency)]];
+  if (Number(invoice.tax_rate) > 0)
+    totalsRows.push([`Tax (${invoice.tax_rate}%)`, fmt(invoice.tax_amount, invoice.currency)]);
+  if (Number(invoice.discount) > 0)
+    totalsRows.push(['Discount', `-${fmt(invoice.discount, invoice.currency)}`]);
+  totalsRows.push(['Total', fmt(invoice.total, invoice.currency)]);
+  if (amountPaid > 0)
+    totalsRows.push(['Amount Paid', fmt(amountPaid, invoice.currency)]);
 
-  rows.forEach(([label, value]) => {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(...MUTED);
-    doc.text(label, totalsX, y);
-    doc.setTextColor(...NAVY);
-    doc.text(value, W - 14, y, { align: 'right' });
-    y += 6;
+  totalsRows.forEach(([label, value]) => {
+    const isTotal = label === 'Total';
+    if (isTotal) {
+      doc.setDrawColor(...LIGHT_GRAY);
+      doc.setLineWidth(0.3);
+      doc.line(totalsX, y - 1, W - M, y - 1);
+    }
+    doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
+    doc.setFontSize(isTotal ? 9.5 : 8.5);
+    doc.setTextColor(isTotal ? ...DARK : ...GRAY);
+    doc.text(label, totalsX, y + 4);
+    doc.setTextColor(...DARK);
+    doc.text(value, W - M, y + 4, { align: 'right' });
+    y += 7;
   });
 
-  // Total line
-  doc.setDrawColor(...NAVY);
-  doc.setLineWidth(0.5);
-  doc.line(totalsX, y, W - 14, y);
-  y += 5;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(...NAVY);
-  doc.text('TOTAL', totalsX, y);
-  doc.text(fmt(invoice.total, invoice.currency), W - 14, y, { align: 'right' });
-  y += 10;
+  // Balance due line (if partial payment)
+  if (amountPaid > 0) {
+    doc.setDrawColor(...LIGHT_GRAY);
+    doc.setLineWidth(0.3);
+    doc.line(totalsX, y - 1, W - M, y - 1);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(...DARK);
+    doc.text('Balance Due', totalsX, y + 4);
+    doc.text(fmt(balanceDue, invoice.currency), W - M, y + 4, { align: 'right' });
+    y += 10;
+  }
 
-  // PAID stamp for receipts
+  y += 8;
+
+  // PAID stamp
   if (isReceipt || invoice.status === 'paid') {
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(36);
+    doc.setFontSize(40);
     doc.setTextColor(22, 163, 74);
     doc.saveGraphicsState();
-    doc.text('PAID', W / 2, y + 10, { align: 'center', angle: 15 });
+    doc.text('PAID', W / 2, y, { align: 'center', angle: 15 });
     doc.restoreGraphicsState();
-    y += 20;
+    y += 18;
   }
 
-  // Notes
+  // ── NOTES ────────────────────────────────────────────────────────
   if (invoice.notes) {
-    y += 4;
-    doc.setFillColor(...LIGHT);
-    const noteLines = doc.splitTextToSize(invoice.notes, W - 48);
-    const noteH = noteLines.length * 5 + 14;
-    doc.roundedRect(14, y, W - 28, noteH, 3, 3, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...MUTED);
-    doc.text('NOTES', 20, y + 8);
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GRAY);
+    doc.text('Notes:', M, y);
+    y += 5;
     doc.setFontSize(8.5);
-    doc.setTextColor(...NAVY);
-    doc.text(noteLines, 20, y + 14);
-    y += noteH + 8;
+    doc.setTextColor(...DARK);
+    const noteLines = doc.splitTextToSize(invoice.notes, W - 28);
+    doc.text(noteLines, M, y);
+    y += noteLines.length * 4.5 + 6;
   }
 
-  // Footer
-  doc.setFillColor(...NAVY);
-  doc.rect(0, 285, W, 12, 'F');
+  // ── TERMS ─────────────────────────────────────────────────────────
+  if (invoice.terms) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GRAY);
+    doc.text('Terms:', M, y);
+    y += 5;
+    doc.setFontSize(8.5);
+    doc.setTextColor(...DARK);
+    const termLines = doc.splitTextToSize(invoice.terms, W - 28);
+    doc.text(termLines, M, y);
+  }
+
+  // ── FOOTER ───────────────────────────────────────────────────────
+  doc.setDrawColor(...LIGHT_GRAY);
+  doc.setLineWidth(0.3);
+  doc.line(M, H - 16, W - M, H - 16);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.setTextColor(168, 196, 224);
-  doc.text('Thank you for your business — TriAxis IT Solutions', W / 2, 292, { align: 'center' });
+  doc.setTextColor(160, 160, 160);
+  doc.text('Thank you for your business — TriAxis IT Solutions  ·  triaxistechnologies.com', W / 2, H - 9, { align: 'center' });
 
   return doc;
 }
@@ -215,6 +279,12 @@ export async function downloadPDF(invoice, isReceipt = false) {
   const doc = await generatePDF(invoice, isReceipt);
   const prefix = isReceipt ? 'Receipt' : 'Invoice';
   doc.save(`${prefix}-${invoice.invoice_number}.pdf`);
+}
+
+export async function previewPDF(invoice, isReceipt = false) {
+  const doc = await generatePDF(invoice, isReceipt);
+  const url = doc.output('bloburl');
+  window.open(url, '_blank');
 }
 
 export async function getPDFBase64(invoice, isReceipt = false) {
