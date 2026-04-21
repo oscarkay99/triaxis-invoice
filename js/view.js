@@ -157,6 +157,7 @@ function renderSidebar(inv) {
   const isPaid = inv.status === 'paid';
   document.getElementById('btnMarkPaid').style.display = isPaid ? 'none' : 'flex';
   document.getElementById('btnReceipt').style.display = isPaid ? 'flex' : 'none';
+  document.getElementById('btnEmailReceipt').style.display = isPaid ? 'flex' : 'none';
 
   document.getElementById('sideInfo').innerHTML = `
     <div class="info-row"><span class="info-label">Invoice #</span><span class="info-value">${inv.invoice_number}</span></div>
@@ -191,6 +192,38 @@ document.getElementById('btnDownload').addEventListener('click', async () => {
 // Download Receipt
 document.getElementById('btnReceipt').addEventListener('click', async () => {
   await downloadPDF(invoice, true);
+});
+
+// Email Receipt
+document.getElementById('btnEmailReceipt').addEventListener('click', async () => {
+  if (!invoice.client_email) { alert('No client email on this invoice.'); return; }
+  const btn = document.getElementById('btnEmailReceipt');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  try {
+    const pdfBase64 = await getPDFBase64(invoice, true);
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'receipt',
+        token: WEBHOOK_TOKEN,
+        invoice_number: invoice.invoice_number,
+        client_name: invoice.client_name,
+        client_email: invoice.client_email,
+        total: invoice.total,
+        currency: invoice.currency,
+        pdf_base64: pdfBase64,
+      }),
+    });
+    alert(`Receipt emailed to ${invoice.client_email}`);
+  } catch {
+    alert('Failed to send receipt. Please try again.');
+  } finally {
+    btn.textContent = 'Email Receipt';
+    btn.disabled = false;
+  }
 });
 
 // Email to client
