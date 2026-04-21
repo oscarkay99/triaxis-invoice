@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Invoice — TriAxis Invoice</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="styles/app.css" />
+</head>
+<body>
+
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-dot"></span>
+      TRIAXIS INVOICE
+    </div>
+    <div class="topbar-actions">
+      <a href="/dashboard.html" class="btn btn-ghost btn-sm">← Dashboard</a>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title" id="pageTitle">New Invoice</h1>
+        <p class="page-subtitle">Fill in the details below</p>
+      </div>
+    </div>
+
+    <div class="create-layout">
+      <!-- FORM -->
+      <div>
+        <!-- Invoice Details -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <div class="section-label">Invoice Details</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="invoiceNumber">Invoice Number</label>
+                <input type="text" id="invoiceNumber" placeholder="INV-2026-001" readonly style="background:var(--bg)" />
+              </div>
+              <div class="form-group">
+                <label for="currency">Currency</label>
+                <select id="currency">
+                  <option value="USD">USD — US Dollar ($)</option>
+                  <option value="GHS">GHS — Ghanaian Cedi (₵)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="issueDate">Issue Date</label>
+                <input type="date" id="issueDate" />
+              </div>
+              <div class="form-group">
+                <label for="dueDate">Due Date</label>
+                <input type="date" id="dueDate" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bill To -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <div class="section-label">Bill To</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="clientName">Client Name *</label>
+                <input type="text" id="clientName" placeholder="John Mensah" required />
+              </div>
+              <div class="form-group">
+                <label for="clientCompany">Company</label>
+                <input type="text" id="clientCompany" placeholder="Acme Ltd" />
+              </div>
+              <div class="form-group">
+                <label for="clientEmail">Email</label>
+                <input type="email" id="clientEmail" placeholder="john@acme.com" />
+              </div>
+              <div class="form-group">
+                <label for="clientPhone">Phone</label>
+                <input type="tel" id="clientPhone" placeholder="+233 XX XXX XXXX" />
+              </div>
+              <div class="form-group span-2">
+                <label for="clientAddress">Address</label>
+                <input type="text" id="clientAddress" placeholder="Street, City, Country" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Line Items -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <div class="section-label">Line Items</div>
+            <div style="overflow-x:auto;">
+              <table class="items-table">
+                <thead>
+                  <tr>
+                    <th style="width:45%">Description</th>
+                    <th style="width:10%">Qty</th>
+                    <th style="width:18%">Unit Price</th>
+                    <th style="width:18%">Total</th>
+                    <th style="width:9%"></th>
+                  </tr>
+                </thead>
+                <tbody id="itemsBody"></tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" id="addItemBtn" style="margin-top:10px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Item
+            </button>
+
+            <!-- Totals -->
+            <div class="totals-wrap" style="margin-top:16px;">
+              <table class="totals-table">
+                <tr>
+                  <td class="totals-label">Subtotal</td>
+                  <td class="totals-value" id="subtotalDisplay">$0.00</td>
+                </tr>
+                <tr>
+                  <td class="totals-label">
+                    Tax
+                    <input type="number" id="taxRate" value="0" min="0" max="100" step="0.5"
+                      style="width:52px;padding:3px 6px;margin-left:6px;font-size:0.78rem;" />%
+                  </td>
+                  <td class="totals-value" id="taxDisplay">$0.00</td>
+                </tr>
+                <tr>
+                  <td class="totals-label">
+                    Discount
+                    <input type="number" id="discountAmt" value="0" min="0" step="0.01"
+                      style="width:70px;padding:3px 6px;margin-left:6px;font-size:0.78rem;" />
+                  </td>
+                  <td class="totals-value" id="discountDisplay">$0.00</td>
+                </tr>
+                <tr>
+                  <td><strong>TOTAL</strong></td>
+                  <td class="totals-value" id="totalDisplay" style="font-size:1.1rem;font-weight:800;color:var(--navy)">$0.00</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <div class="section-label">Notes & Payment Terms</div>
+            <div class="form-group">
+              <textarea id="notes" rows="4" placeholder="Payment terms, bank transfer details, thank you message…"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <a href="/dashboard.html" class="btn btn-outline">Cancel</a>
+          <button type="button" class="btn btn-outline" id="saveDraftBtn">Save Draft</button>
+          <button type="button" class="btn btn-navy" id="saveBtn">Save Invoice</button>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div>
+        <div class="info-card">
+          <div class="info-card-header">Invoice Summary</div>
+          <div class="info-card-body">
+            <div class="info-row"><span class="info-label">Number</span><span class="info-value" id="sideNumber">—</span></div>
+            <div class="info-row"><span class="info-label">Client</span><span class="info-value" id="sideClient">—</span></div>
+            <div class="info-row"><span class="info-label">Currency</span><span class="info-value" id="sideCurrency">USD</span></div>
+            <div class="info-row"><span class="info-label">Due</span><span class="info-value" id="sideDue">—</span></div>
+            <div class="info-row"><span class="info-label">Total</span><span class="info-value" id="sideTotal" style="color:var(--navy);font-size:1rem;">$0.00</span></div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-top:12px;text-align:center;">You can send the invoice to the client after saving.</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/create.js"></script>
+</body>
+</html>

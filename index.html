@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — TriAxis Invoice</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="styles/app.css" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-text">TRIAXIS<span> INVOICE</span></div>
+        <div class="logo-sub">Staff portal — authorised access only</div>
+      </div>
+      <h1 class="login-title">Sign in</h1>
+      <p class="login-sub">Use your TriAxis staff credentials.</p>
+      <form class="login-form" id="loginForm">
+        <div id="errorMsg" class="error-msg"></div>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@triaxistechnologies.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-navy btn-lg" id="submitBtn" style="width:100%;justify-content:center;">Sign In</button>
+      </form>
+    </div>
+  </div>
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>

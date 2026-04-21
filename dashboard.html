@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — TriAxis Invoice</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="styles/app.css" />
+</head>
+<body>
+
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-dot"></span>
+      TRIAXIS INVOICE
+    </div>
+    <div class="topbar-actions">
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Invoices</h1>
+        <p class="page-subtitle">Manage and track all client invoices</p>
+      </div>
+      <a href="/create.html" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Invoice
+      </a>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-label">Total Invoiced</div>
+        <div class="stat-value" id="statTotal">—</div>
+        <div class="stat-sub" id="statTotalCount">— invoices</div>
+      </div>
+      <div class="stat-card stat-unpaid">
+        <div class="stat-label">Outstanding</div>
+        <div class="stat-value" id="statUnpaid">—</div>
+        <div class="stat-sub" id="statUnpaidCount">— unpaid</div>
+      </div>
+      <div class="stat-card stat-overdue">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value" id="statOverdue">—</div>
+        <div class="stat-sub" id="statOverdueCount">— invoices</div>
+      </div>
+      <div class="stat-card stat-paid">
+        <div class="stat-label">Collected</div>
+        <div class="stat-value" id="statPaid">—</div>
+        <div class="stat-sub" id="statPaidCount">— paid</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="filter-tabs" id="filterTabs">
+          <button class="filter-tab active" data-filter="all">All</button>
+          <button class="filter-tab" data-filter="unpaid">Unpaid</button>
+          <button class="filter-tab" data-filter="overdue">Overdue</button>
+          <button class="filter-tab" data-filter="paid">Paid</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Client</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Issue Date</th>
+              <th>Due Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="invoiceTable">
+            <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:48px;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
