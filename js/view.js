@@ -28,100 +28,123 @@ function statusBadge(status) {
 function renderPreview(inv) {
   const items = inv.items || [];
   const isPaid = inv.status === 'paid';
+  const amountPaid = Number(inv.amount_paid) || 0;
+  const balanceDue = Math.max(0, Number(inv.total) - amountPaid);
+  const title = isPaid ? 'RECEIPT' : 'INVOICE';
 
   document.getElementById('invoicePreview').innerHTML = `
-    <div class="inv-header">
-      <div>
-        <div class="inv-brand">TRIAXIS<span>·</span>IT</div>
-        <div class="inv-brand-sub">
-          14 Independence Avenue, Accra, Ghana<br>
-          info@triaxistechnologies.com · +233 30 123 4567
-        </div>
-      </div>
-      <div class="inv-title-block">
-        ${isPaid ? '<div class="inv-paid-stamp">PAID</div>' : ''}
-        <div class="inv-title">${inv.status === 'paid' ? 'RECEIPT' : 'INVOICE'}</div>
-        <div class="inv-number">#${inv.invoice_number}</div>
-      </div>
-    </div>
+    <div class="rcp-wrap">
 
-    <div class="inv-meta">
-      <div>
-        <div class="inv-meta-label">Bill To</div>
-        <div class="inv-meta-value">
-          <strong>${inv.client_name}</strong>
-          ${inv.client_company ? `<br>${inv.client_company}` : ''}
-          ${inv.client_email ? `<br>${inv.client_email}` : ''}
-          ${inv.client_address ? `<br>${inv.client_address}` : ''}
+      <!-- TOP: logo + title -->
+      <div class="rcp-top">
+        <div class="rcp-logo-block">
+          <img src="/assets/logo.png" alt="TriAxis IT Solutions" class="rcp-logo" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+          <div class="rcp-logo-fallback" style="display:none">TRIAXIS IT SOLUTIONS</div>
+          <div class="rcp-company-name">TriAxis IT Solutions</div>
+          <div class="rcp-company-address">14 Independence Avenue, Accra, Ghana</div>
+          <div class="rcp-company-address">info@triaxistechnologies.com · triaxistechnologies.com</div>
+        </div>
+        <div class="rcp-title-block">
+          ${isPaid ? '<div class="rcp-paid-stamp">PAID</div>' : ''}
+          <div class="rcp-title">${title}</div>
+          <div class="rcp-number"># ${inv.invoice_number}</div>
         </div>
       </div>
-      <div>
-        <div class="inv-meta-label">Ship To</div>
-        <div class="inv-meta-value">
-          <strong>${inv.ship_to || inv.client_name}</strong>
-        </div>
-      </div>
-      <div>
-        <div class="inv-meta-label">Invoice Details</div>
-        <div class="inv-meta-value">
-          <strong>Issue Date:</strong> ${inv.issue_date || '—'}<br>
-          ${inv.payment_terms ? `<strong>Payment Terms:</strong> ${inv.payment_terms}<br>` : ''}
-          <strong>Due Date:</strong> ${inv.due_date || '—'}<br>
-          ${inv.po_number ? `<strong>PO Number:</strong> ${inv.po_number}<br>` : ''}
-          ${isPaid ? `<strong>Paid:</strong> ${inv.paid_at ? new Date(inv.paid_at).toLocaleDateString('en-GB') : '—'}<br>` : ''}
-          ${isPaid && inv.payment_method ? `<strong>Method:</strong> ${inv.payment_method}<br>` : ''}
-          <strong>Currency:</strong> ${inv.currency}
-        </div>
-      </div>
-    </div>
 
-    <div class="inv-items">
-      <table>
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th class="text-right" style="width:60px">Qty</th>
-            <th class="text-right" style="width:110px">Unit Price</th>
-            <th class="text-right" style="width:110px">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items.map(item => `
+      <hr class="rcp-divider" />
+
+      <!-- MIDDLE: bill to / ship to + metadata table -->
+      <div class="rcp-middle">
+        <div class="rcp-billing">
+          <div class="rcp-billing-cols">
+            <div>
+              <div class="rcp-field-label">Bill To</div>
+              <div class="rcp-client-name">${inv.client_name || '—'}</div>
+              ${inv.client_company ? `<div class="rcp-client-detail">${inv.client_company}</div>` : ''}
+              ${inv.client_email ? `<div class="rcp-client-detail">${inv.client_email}</div>` : ''}
+              ${inv.client_address ? `<div class="rcp-client-detail">${inv.client_address}</div>` : ''}
+            </div>
+            <div>
+              <div class="rcp-field-label">Ship To</div>
+              <div class="rcp-client-name">${inv.ship_to || inv.client_name || '—'}</div>
+            </div>
+          </div>
+        </div>
+        <div class="rcp-meta-table">
+          <div class="rcp-meta-row">
+            <span class="rcp-meta-label">Date</span>
+            <span class="rcp-meta-value">${inv.issue_date || '—'}</span>
+          </div>
+          <div class="rcp-meta-row">
+            <span class="rcp-meta-label">Payment Terms</span>
+            <span class="rcp-meta-value">${inv.payment_terms || '—'}</span>
+          </div>
+          <div class="rcp-meta-row">
+            <span class="rcp-meta-label">Due Date</span>
+            <span class="rcp-meta-value">${inv.due_date || '—'}</span>
+          </div>
+          <div class="rcp-meta-row">
+            <span class="rcp-meta-label">PO Number</span>
+            <span class="rcp-meta-value">${inv.po_number || '—'}</span>
+          </div>
+          <div class="rcp-meta-row rcp-balance-row">
+            <span class="rcp-balance-label">Balance Due</span>
+            <span class="rcp-balance-value">${fmt(balanceDue, inv.currency)}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITEMS TABLE -->
+      <div class="rcp-items">
+        <table>
+          <thead>
             <tr>
-              <td>${item.description || '—'}</td>
-              <td class="text-right">${item.qty}</td>
-              <td class="text-right">${fmt(item.unit_price, inv.currency)}</td>
-              <td class="text-right" style="font-weight:600">${fmt(item.qty * item.unit_price, inv.currency)}</td>
+              <th>Item</th>
+              <th style="width:80px;text-align:center">Quantity</th>
+              <th style="width:120px;text-align:right">Rate</th>
+              <th style="width:120px;text-align:right">Amount</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="inv-totals">
-      <table>
-        <tr><td class="label">Subtotal</td><td class="value">${fmt(inv.subtotal, inv.currency)}</td></tr>
-        ${Number(inv.tax_rate) > 0 ? `<tr><td class="label">Tax (${inv.tax_rate}%)</td><td class="value">${fmt(inv.tax_amount, inv.currency)}</td></tr>` : ''}
-        ${Number(inv.discount) > 0 ? `<tr><td class="label">Discount</td><td class="value">-${fmt(inv.discount, inv.currency)}</td></tr>` : ''}
-        <tr class="inv-total-row"><td>Total</td><td class="value">${fmt(inv.total, inv.currency)}</td></tr>
-      </table>
-    </div>
-
-    ${inv.notes ? `
-      <div class="inv-notes">
-        <div class="inv-notes-label">Notes</div>
-        <div class="inv-notes-text">${inv.notes}</div>
+          </thead>
+          <tbody>
+            ${items.map(item => `
+              <tr>
+                <td>${item.description || '—'}</td>
+                <td style="text-align:center">${item.qty}</td>
+                <td style="text-align:right">${fmt(item.unit_price, inv.currency)}</td>
+                <td style="text-align:right;font-weight:600">${fmt(item.qty * item.unit_price, inv.currency)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
       </div>
-    ` : ''}
-    ${inv.terms ? `
-      <div class="inv-notes">
-        <div class="inv-notes-label">Terms</div>
-        <div class="inv-notes-text">${inv.terms}</div>
-      </div>
-    ` : ''}
 
-    <div class="inv-footer">
-      Thank you for your business — TriAxis IT Solutions · triaxistechnologies.com
+      <!-- TOTALS -->
+      <div class="rcp-totals">
+        <table>
+          <tr><td class="rcp-tot-label">Subtotal</td><td class="rcp-tot-val">${fmt(inv.subtotal, inv.currency)}</td></tr>
+          ${Number(inv.tax_rate) > 0 ? `<tr><td class="rcp-tot-label">Tax (${inv.tax_rate}%)</td><td class="rcp-tot-val">${fmt(inv.tax_amount, inv.currency)}</td></tr>` : ''}
+          ${Number(inv.discount) > 0 ? `<tr><td class="rcp-tot-label">Discount</td><td class="rcp-tot-val">-${fmt(inv.discount, inv.currency)}</td></tr>` : ''}
+          <tr class="rcp-tot-total"><td>Total</td><td class="rcp-tot-val">${fmt(inv.total, inv.currency)}</td></tr>
+          ${amountPaid > 0 ? `<tr><td class="rcp-tot-label">Amount Paid</td><td class="rcp-tot-val">${fmt(amountPaid, inv.currency)}</td></tr>` : ''}
+          ${amountPaid > 0 ? `<tr class="rcp-tot-balance"><td>Balance Due</td><td class="rcp-tot-val">${fmt(balanceDue, inv.currency)}</td></tr>` : ''}
+        </table>
+      </div>
+
+      ${inv.notes ? `
+        <div class="rcp-note-block">
+          <div class="rcp-note-label">Notes:</div>
+          <div class="rcp-note-text">${inv.notes}</div>
+        </div>
+      ` : ''}
+      ${inv.terms ? `
+        <div class="rcp-note-block">
+          <div class="rcp-note-label">Terms:</div>
+          <div class="rcp-note-text">${inv.terms}</div>
+        </div>
+      ` : ''}
+
+      <hr class="rcp-divider" style="margin-top:28px" />
+      <div class="rcp-footer">Thank you for your business — TriAxis IT Solutions · triaxistechnologies.com</div>
     </div>
   `;
 }
