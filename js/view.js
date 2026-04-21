@@ -62,6 +62,7 @@ function renderPreview(inv) {
               <div class="rcp-client-name">${inv.client_name || '—'}</div>
               ${inv.client_company ? `<div class="rcp-client-detail">${inv.client_company}</div>` : ''}
               ${inv.client_email ? `<div class="rcp-client-detail">${inv.client_email}</div>` : ''}
+              ${inv.client_phone ? `<div class="rcp-client-detail">${inv.client_phone}</div>` : ''}
               ${inv.client_address ? `<div class="rcp-client-detail">${inv.client_address}</div>` : ''}
             </div>
             <div>

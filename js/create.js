@@ -111,6 +111,7 @@ function collectData(status) {
     client_name: document.getElementById('clientName').value.trim(),
     client_company: document.getElementById('clientCompany').value.trim() || null,
     client_email: document.getElementById('clientEmail').value.trim() || null,
+    client_phone: document.getElementById('clientPhone').value.trim() || null,
     client_address: document.getElementById('clientAddress').value.trim() || null,
     ship_to: document.getElementById('shipTo').value.trim() || null,
     currency: document.getElementById('currency').value,
@@ -164,6 +165,7 @@ async function init() {
       document.getElementById('clientName').value = data.client_name;
       document.getElementById('clientCompany').value = data.client_company || '';
       document.getElementById('clientEmail').value = data.client_email || '';
+      document.getElementById('clientPhone').value = data.client_phone || '';
       document.getElementById('clientAddress').value = data.client_address || '';
       document.getElementById('taxRate').value = data.tax_rate || 0;
       document.getElementById('discountAmt').value = data.discount || 0;

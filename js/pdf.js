@@ -104,8 +104,9 @@ export async function generatePDF(invoice, isReceipt = false) {
   doc.setFontSize(8.5);
   doc.setTextColor(...GRAY);
   if (invoice.client_company) { doc.text(invoice.client_company, billX, leftY); leftY += 4.5; }
-  if (invoice.client_address) { doc.text(invoice.client_address, billX, leftY); leftY += 4.5; }
   if (invoice.client_email)   { doc.text(invoice.client_email, billX, leftY); leftY += 4.5; }
+  if (invoice.client_phone)   { doc.text(invoice.client_phone, billX, leftY); leftY += 4.5; }
+  if (invoice.client_address) { doc.text(invoice.client_address, billX, leftY); leftY += 4.5; }
 
   // Metadata rows (right side)
   const metaRows = [
