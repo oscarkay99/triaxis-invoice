@@ -203,7 +203,7 @@ export async function generatePDF(invoice, isReceipt = false) {
     }
     doc.setFont('helvetica', isTotal ? 'bold' : 'normal');
     doc.setFontSize(isTotal ? 9.5 : 8.5);
-    doc.setTextColor(isTotal ? ...DARK : ...GRAY);
+    doc.setTextColor(...(isTotal ? DARK : GRAY));
     doc.text(label, totalsX, y + 4);
     doc.setTextColor(...DARK);
     doc.text(value, W - M, y + 4, { align: 'right' });
