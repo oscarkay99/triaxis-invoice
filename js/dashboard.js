@@ -95,7 +95,7 @@ function renderTable(invoices) {
         <div class="td-actions">
           <a href="/view.html?id=${inv.id}" class="btn btn-outline btn-sm">View</a>
           <a href="/create.html?id=${inv.id}" class="btn btn-outline btn-sm">Edit</a>
-          ${inv.status !== 'paid' ? `<button class="btn btn-success btn-sm" data-markpaid="${inv.id}">Mark Paid</button>` : ''}
+          ${inv.status !== 'paid' && inv.emailed_at ? `<button class="btn btn-success btn-sm" data-markpaid="${inv.id}">Mark Paid</button>` : ''}
           <button class="btn btn-danger btn-sm" data-delete="${inv.id}">Delete</button>
         </div>
       </td>
