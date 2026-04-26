@@ -193,6 +193,12 @@ function renderSidebar(inv) {
     <div class="info-row"><span class="info-label">Total</span><span class="info-value" style="color:var(--navy);font-weight:800">${fmt(inv.total, inv.currency)}</span></div>
     <div class="info-row"><span class="info-label">Due</span><span class="info-value">${inv.due_date || '—'}</span></div>
     ${isPaid ? `<div class="info-row"><span class="info-label">Paid via</span><span class="info-value">${inv.payment_method || '—'}</span></div>` : ''}
+    <div class="info-row">
+      <span class="info-label">Emailed</span>
+      <span class="info-value" style="color:${inv.emailed_at ? 'var(--success)' : 'var(--muted)'}">
+        ${inv.emailed_at ? new Date(inv.emailed_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) : 'Not sent'}
+      </span>
+    </div>
   `;
 
   // Set today as default paid date
@@ -279,6 +285,9 @@ document.getElementById('btnEmail').addEventListener('click', async () => {
         pdf_base64: pdfBase64,
       }),
     });
+    await supabase.from('invoices').update({ emailed_at: new Date().toISOString() }).eq('id', id);
+    invoice.emailed_at = new Date().toISOString();
+    renderSidebar(invoice);
     showToast('Invoice sent!', `Emailed to ${invoice.client_email}`, 'success');
   } catch {
     showToast('Send failed', 'Could not send the email. Please try again.', 'error');
@@ -289,10 +298,13 @@ document.getElementById('btnEmail').addEventListener('click', async () => {
 });
 
 // Mark as paid
-document.getElementById('btnMarkPaid').addEventListener('click', () => {
+const markPaidBtn = document.getElementById('btnMarkPaid');
+markPaidBtn.addEventListener('click', () => {
+  markPaidBtn.classList.replace('btn-outline', 'btn-success');
   document.getElementById('paidPanel').style.display = 'block';
 });
 document.getElementById('cancelPaidBtn').addEventListener('click', () => {
+  markPaidBtn.classList.replace('btn-success', 'btn-outline');
   document.getElementById('paidPanel').style.display = 'none';
 });
 document.getElementById('confirmPaidBtn').addEventListener('click', async () => {

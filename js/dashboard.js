@@ -82,7 +82,13 @@ function renderTable(invoices) {
         ${inv.client_company ? `<div style="font-size:0.78rem;color:var(--muted)">${inv.client_company}</div>` : ''}
       </td>
       <td class="td-amount">${fmt(inv.total, inv.currency)}</td>
-      <td>${statusBadge(inv.status)}</td>
+      <td>
+        ${statusBadge(inv.status)}
+        ${inv.emailed_at ? `<div style="font-size:0.72rem;color:var(--success);margin-top:4px;display:flex;align-items:center;gap:4px;">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Emailed ${new Date(inv.emailed_at).toLocaleDateString('en-GB', { day:'numeric', month:'short' })}
+        </div>` : ''}
+      </td>
       <td>${inv.issue_date || '—'}</td>
       <td style="color:${inv.status === 'overdue' ? 'var(--danger)' : 'inherit'}">${inv.due_date || '—'}</td>
       <td>
@@ -130,6 +136,8 @@ async function loadInvoices() {
 function applyFilter() {
   const filtered = currentFilter === 'all'
     ? allInvoices
+    : currentFilter === 'mailed'
+    ? allInvoices.filter(i => !!i.emailed_at)
     : allInvoices.filter(i => i.status === currentFilter);
   renderTable(filtered);
 }
