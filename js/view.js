@@ -184,6 +184,7 @@ function renderSidebar(inv) {
 
   const isPaid = inv.status === 'paid';
   document.getElementById('btnMarkPaid').style.display = isPaid ? 'none' : 'flex';
+  document.getElementById('btnUnmarkPaid').style.display = isPaid ? 'flex' : 'none';
   document.getElementById('btnReceipt').style.display = isPaid ? 'flex' : 'none';
   document.getElementById('btnEmailReceipt').style.display = isPaid ? 'flex' : 'none';
 
@@ -295,6 +296,18 @@ document.getElementById('btnEmail').addEventListener('click', async () => {
     btn.textContent = 'Email to Client';
     btn.disabled = false;
   }
+});
+
+// Mark as unpaid
+document.getElementById('btnUnmarkPaid').addEventListener('click', async () => {
+  if (!confirm('Revert this invoice to unpaid?')) return;
+  const { error } = await supabase
+    .from('invoices')
+    .update({ status: 'unpaid', payment_method: null, paid_at: null })
+    .eq('id', id);
+  if (error) { showToast('Update failed', error.message, 'error'); return; }
+  showToast('Reverted to unpaid', '', 'info');
+  await load();
 });
 
 // Mark as paid
