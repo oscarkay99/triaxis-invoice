@@ -139,15 +139,23 @@ async function save(status) {
   if (!data.client_name) { alert('Please enter a client name.'); return; }
   if (!data.items.length) { alert('Please add at least one line item.'); return; }
 
-  let error;
+  let error, savedId;
   if (editId) {
     ({ error } = await supabase.from('invoices').update(data).eq('id', editId));
+    savedId = editId;
   } else {
-    ({ error } = await supabase.from('invoices').insert(data));
+    const { data: inserted, error: insertError } = await supabase
+      .from('invoices').insert(data).select('id').single();
+    error = insertError;
+    savedId = inserted?.id;
   }
 
   if (error) { alert('Error saving invoice: ' + error.message); return; }
-  window.location.href = '/dashboard.html';
+
+  const autoEmail = status !== 'draft' && !!data.client_email;
+  window.location.href = savedId && autoEmail
+    ? `/view.html?id=${savedId}&autoEmail=1`
+    : '/dashboard.html';
 }
 
 document.getElementById('saveDraftBtn').addEventListener('click', () => save('draft'));

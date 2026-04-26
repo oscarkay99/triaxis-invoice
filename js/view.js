@@ -280,4 +280,41 @@ document.getElementById('confirmPaidBtn').addEventListener('click', async () => 
   await load();
 });
 
-load();
+async function autoSendIfRequested() {
+  const params = new URLSearchParams(location.search);
+  if (!params.get('autoEmail') || !invoice?.client_email) return;
+
+  // Clean the URL so a refresh doesn't re-send
+  history.replaceState({}, '', `/view.html?id=${id}`);
+
+  const btn = document.getElementById('btnEmail');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+  try {
+    const pdfBase64 = await getPDFBase64(invoice, false);
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'invoice',
+        token: WEBHOOK_TOKEN,
+        invoice_number: invoice.invoice_number,
+        client_name: invoice.client_name,
+        client_email: invoice.client_email,
+        total: invoice.total,
+        currency: invoice.currency,
+        due_date: invoice.due_date,
+        pdf_base64: pdfBase64,
+      }),
+    });
+    alert(`Invoice emailed to ${invoice.client_email}`);
+  } catch {
+    alert('Could not auto-send email. Use the "Email to Client" button to retry.');
+  } finally {
+    btn.textContent = 'Email to Client';
+    btn.disabled = false;
+  }
+}
+
+load().then(autoSendIfRequested);
