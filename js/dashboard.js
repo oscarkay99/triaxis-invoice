@@ -95,11 +95,17 @@ function renderTable(invoices) {
         <div class="td-actions">
           <a href="/view.html?id=${inv.id}" class="btn btn-outline btn-sm">View</a>
           <a href="/create.html?id=${inv.id}" class="btn btn-outline btn-sm">Edit</a>
+          ${inv.status !== 'paid' ? `<button class="btn btn-success btn-sm" data-markpaid="${inv.id}">Mark Paid</button>` : ''}
           <button class="btn btn-danger btn-sm" data-delete="${inv.id}">Delete</button>
         </div>
       </td>
     </tr>
   `).join('');
+
+  // Mark as Paid handlers
+  tbody.querySelectorAll('[data-markpaid]').forEach(btn => {
+    btn.addEventListener('click', () => openPaidModal(btn.dataset.markpaid));
+  });
 
   // Delete handlers
   tbody.querySelectorAll('[data-delete]').forEach(btn => {
@@ -152,6 +158,41 @@ document.getElementById('filterTabs').addEventListener('click', (e) => {
 });
 
 loadInvoices();
+
+// ===== MARK AS PAID MODAL =====
+let paidTargetId = null;
+const paidModal = document.getElementById('paidModal');
+document.getElementById('modalPaidDate').value = new Date().toISOString().split('T')[0];
+
+function openPaidModal(invoiceId) {
+  paidTargetId = invoiceId;
+  document.getElementById('modalPaidDate').value = new Date().toISOString().split('T')[0];
+  paidModal.style.display = 'flex';
+}
+
+document.getElementById('modalCancelBtn').addEventListener('click', () => {
+  paidModal.style.display = 'none';
+  paidTargetId = null;
+});
+
+paidModal.addEventListener('click', (e) => {
+  if (e.target === paidModal) { paidModal.style.display = 'none'; paidTargetId = null; }
+});
+
+document.getElementById('modalConfirmBtn').addEventListener('click', async () => {
+  if (!paidTargetId) return;
+  const method = document.getElementById('modalPaymentMethod').value;
+  const paidAt = new Date(document.getElementById('modalPaidDate').value).toISOString();
+  const { error } = await supabase
+    .from('invoices')
+    .update({ status: 'paid', payment_method: method, paid_at: paidAt })
+    .eq('id', paidTargetId);
+  paidModal.style.display = 'none';
+  paidTargetId = null;
+  if (error) { showToast('Update failed', error.message, 'error'); return; }
+  showToast('Marked as paid', `Payment recorded via ${method}`, 'success');
+  loadInvoices();
+});
 
 // ===== UPLOAD =====
 const BUCKET = 'invoice-uploads';

@@ -183,7 +183,6 @@ function renderSidebar(inv) {
   document.getElementById('btnEdit').href = `/create.html?id=${inv.id}`;
 
   const isPaid = inv.status === 'paid';
-  document.getElementById('btnMarkPaid').style.display = isPaid ? 'none' : 'flex';
   document.getElementById('btnUnmarkPaid').style.display = isPaid ? 'flex' : 'none';
   document.getElementById('btnReceipt').style.display = isPaid ? 'flex' : 'none';
   document.getElementById('btnEmailReceipt').style.display = isPaid ? 'flex' : 'none';
@@ -310,27 +309,5 @@ document.getElementById('btnUnmarkPaid').addEventListener('click', async () => {
   await load();
 });
 
-// Mark as paid
-const markPaidBtn = document.getElementById('btnMarkPaid');
-markPaidBtn.addEventListener('click', () => {
-  markPaidBtn.classList.replace('btn-outline', 'btn-success');
-  document.getElementById('paidPanel').style.display = 'block';
-});
-document.getElementById('cancelPaidBtn').addEventListener('click', () => {
-  markPaidBtn.classList.replace('btn-success', 'btn-outline');
-  document.getElementById('paidPanel').style.display = 'none';
-});
-document.getElementById('confirmPaidBtn').addEventListener('click', async () => {
-  const method = document.getElementById('paymentMethod').value;
-  const paidAt = new Date(document.getElementById('paidDate').value).toISOString();
-  const { error } = await supabase
-    .from('invoices')
-    .update({ status: 'paid', payment_method: method, paid_at: paidAt })
-    .eq('id', id);
-  if (error) { showToast('Update failed', error.message, 'error'); return; }
-  document.getElementById('paidPanel').style.display = 'none';
-  showToast('Marked as paid', `Payment recorded via ${method}`, 'success');
-  await load();
-});
 
 load();

@@ -111,6 +111,31 @@
 
   </div>
 
+  <!-- Mark as Paid modal -->
+  <div id="paidModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,45,85,0.45);display:none;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--surface);border-radius:var(--radius);padding:28px;width:100%;max-width:360px;box-shadow:var(--shadow-md);">
+      <div style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:20px;">Mark as Paid</div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Payment Method</label>
+        <select id="modalPaymentMethod">
+          <option value="Bank Transfer">Bank Transfer</option>
+          <option value="Mobile Money">Mobile Money</option>
+          <option value="Cash">Cash</option>
+          <option value="Cheque">Cheque</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label>Payment Date</label>
+        <input type="date" id="modalPaidDate" />
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-success" id="modalConfirmBtn" style="flex:1;justify-content:center;">Confirm</button>
+        <button class="btn btn-outline" id="modalCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script type="module" src="js/dashboard.js"></script>
