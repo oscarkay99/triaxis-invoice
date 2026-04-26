@@ -152,10 +152,7 @@ async function save(status) {
 
   if (error) { alert('Error saving invoice: ' + error.message); return; }
 
-  const autoEmail = status !== 'draft' && !!data.client_email;
-  window.location.href = savedId && autoEmail
-    ? `/view.html?id=${savedId}&autoEmail=1`
-    : '/dashboard.html';
+  window.location.href = savedId ? `/view.html?id=${savedId}` : '/dashboard.html';
 }
 
 document.getElementById('saveDraftBtn').addEventListener('click', () => save('draft'));

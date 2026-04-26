@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — TriAxis Invoice</title>
   <meta name="robots" content="noindex, nofollow" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -88,7 +88,29 @@
         </table>
       </div>
     </div>
+
+    <!-- UPLOAD SECTION -->
+    <div class="card" style="margin-top:24px;">
+      <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="card-title">Uploaded Invoices</div>
+        <span style="font-size:0.78rem;color:var(--muted);">PDF files only</span>
+      </div>
+      <div class="card-body">
+        <div class="upload-zone" id="uploadZone">
+          <input type="file" id="uploadInput" accept=".pdf,application/pdf" style="display:none;" />
+          <div class="upload-zone-icon">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <div class="upload-zone-label"><strong>Drop a PDF here</strong> or click to browse</div>
+          <div class="upload-zone-sub">Maximum 10 MB</div>
+        </div>
+        <div class="upload-list" id="uploadList"></div>
+      </div>
+    </div>
+
   </div>
+
+  <div class="toast-container" id="toast-container"></div>
 
   <script type="module" src="js/dashboard.js"></script>
 </body>

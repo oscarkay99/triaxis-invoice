@@ -15,6 +15,34 @@ if (!id) { window.location.href = '/dashboard.html'; }
 
 let invoice = null;
 
+function showToast(title, message, type = 'success') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+  }
+  const icons = {
+    success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    error:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${type}`;
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type]}</div>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      ${message ? `<div class="toast-msg">${message}</div>` : ''}
+    </div>
+    <button class="toast-close" aria-label="Dismiss">×</button>
+  `;
+  toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+}
+
 function fmt(amount, currency) {
   const sym = currency === 'GHS' ? '₵' : '$';
   return `${sym}${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -196,7 +224,7 @@ document.getElementById('btnReceipt').addEventListener('click', async () => {
 
 // Email Receipt
 document.getElementById('btnEmailReceipt').addEventListener('click', async () => {
-  if (!invoice.client_email) { alert('No client email on this invoice.'); return; }
+  if (!invoice.client_email) { showToast('No email on file', 'This invoice has no client email address.', 'error'); return; }
   const btn = document.getElementById('btnEmailReceipt');
   btn.textContent = 'Sending…';
   btn.disabled = true;
@@ -217,9 +245,9 @@ document.getElementById('btnEmailReceipt').addEventListener('click', async () =>
         pdf_base64: pdfBase64,
       }),
     });
-    alert(`Receipt emailed to ${invoice.client_email}`);
+    showToast('Receipt sent!', `Emailed to ${invoice.client_email}`, 'success');
   } catch {
-    alert('Failed to send receipt. Please try again.');
+    showToast('Send failed', 'Could not send the receipt. Please try again.', 'error');
   } finally {
     btn.textContent = 'Email Receipt';
     btn.disabled = false;
@@ -228,33 +256,32 @@ document.getElementById('btnEmailReceipt').addEventListener('click', async () =>
 
 // Email to client
 document.getElementById('btnEmail').addEventListener('click', async () => {
-  if (!invoice.client_email) { alert('No client email on this invoice.'); return; }
+  if (!invoice.client_email) { showToast('No email on file', 'This invoice has no client email address.', 'error'); return; }
   const btn = document.getElementById('btnEmail');
   btn.textContent = 'Sending…';
   btn.disabled = true;
 
   try {
     const pdfBase64 = await getPDFBase64(invoice, false);
-    const payload = {
-      type: 'invoice',
-      token: WEBHOOK_TOKEN,
-      invoice_number: invoice.invoice_number,
-      client_name: invoice.client_name,
-      client_email: invoice.client_email,
-      total: invoice.total,
-      currency: invoice.currency,
-      due_date: invoice.due_date,
-      pdf_base64: pdfBase64,
-    };
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        type: 'invoice',
+        token: WEBHOOK_TOKEN,
+        invoice_number: invoice.invoice_number,
+        client_name: invoice.client_name,
+        client_email: invoice.client_email,
+        total: invoice.total,
+        currency: invoice.currency,
+        due_date: invoice.due_date,
+        pdf_base64: pdfBase64,
+      }),
     });
-    alert(`Invoice emailed to ${invoice.client_email}`);
+    showToast('Invoice sent!', `Emailed to ${invoice.client_email}`, 'success');
   } catch {
-    alert('Failed to send email. Please try again.');
+    showToast('Send failed', 'Could not send the email. Please try again.', 'error');
   } finally {
     btn.textContent = 'Email to Client';
     btn.disabled = false;
@@ -275,46 +302,10 @@ document.getElementById('confirmPaidBtn').addEventListener('click', async () => 
     .from('invoices')
     .update({ status: 'paid', payment_method: method, paid_at: paidAt })
     .eq('id', id);
-  if (error) { alert('Error: ' + error.message); return; }
+  if (error) { showToast('Update failed', error.message, 'error'); return; }
   document.getElementById('paidPanel').style.display = 'none';
+  showToast('Marked as paid', `Payment recorded via ${method}`, 'success');
   await load();
 });
 
-async function autoSendIfRequested() {
-  const params = new URLSearchParams(location.search);
-  if (!params.get('autoEmail') || !invoice?.client_email) return;
-
-  // Clean the URL so a refresh doesn't re-send
-  history.replaceState({}, '', `/view.html?id=${id}`);
-
-  const btn = document.getElementById('btnEmail');
-  btn.textContent = 'Sending…';
-  btn.disabled = true;
-  try {
-    const pdfBase64 = await getPDFBase64(invoice, false);
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'invoice',
-        token: WEBHOOK_TOKEN,
-        invoice_number: invoice.invoice_number,
-        client_name: invoice.client_name,
-        client_email: invoice.client_email,
-        total: invoice.total,
-        currency: invoice.currency,
-        due_date: invoice.due_date,
-        pdf_base64: pdfBase64,
-      }),
-    });
-    alert(`Invoice emailed to ${invoice.client_email}`);
-  } catch {
-    alert('Could not auto-send email. Use the "Email to Client" button to retry.');
-  } finally {
-    btn.textContent = 'Email to Client';
-    btn.disabled = false;
-  }
-}
-
-load().then(autoSendIfRequested);
+load();

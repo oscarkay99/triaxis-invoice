@@ -5,6 +5,28 @@ const session = await requireAuth();
 if (!session) throw new Error('Not authenticated');
 renderUser(session);
 
+function showToast(title, message, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const icons = {
+    success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    error:   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    info:    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
+  const toast = document.createElement('div');
+  toast.className = `toast toast--${type}`;
+  toast.innerHTML = `
+    <div class="toast-icon">${icons[type]}</div>
+    <div class="toast-body">
+      <div class="toast-title">${title}</div>
+      ${message ? `<div class="toast-msg">${message}</div>` : ''}
+    </div>
+    <button class="toast-close" aria-label="Dismiss">×</button>
+  `;
+  toast.querySelector('.toast-close').addEventListener('click', () => toast.remove());
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 5000);
+}
+
 document.getElementById('logoutBtn').addEventListener('click', logout);
 
 let allInvoices = [];
@@ -122,3 +144,96 @@ document.getElementById('filterTabs').addEventListener('click', (e) => {
 });
 
 loadInvoices();
+
+// ===== UPLOAD =====
+const BUCKET = 'invoice-uploads';
+const userId = session.user.id;
+
+async function loadUploads() {
+  const list = document.getElementById('uploadList');
+  const { data, error } = await supabase.storage.from(BUCKET).list(userId, {
+    sortBy: { column: 'created_at', order: 'desc' },
+  });
+
+  if (error || !data || !data.length) {
+    list.innerHTML = `<p style="font-size:0.8rem;color:var(--muted);text-align:center;padding:8px 0;">No uploaded invoices yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = data.map(file => `
+    <div class="upload-item">
+      <div class="upload-item-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="upload-item-name" title="${file.name}">${file.name.replace(/^\d+_/, '')}</div>
+      <div class="upload-item-date">${new Date(file.created_at).toLocaleDateString()}</div>
+      <div class="upload-item-actions">
+        <button class="btn btn-outline btn-sm" data-download="${userId}/${file.name}">Download</button>
+        <button class="btn btn-danger btn-sm" data-remove="${userId}/${file.name}">Delete</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-download]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const { data: urlData, error: urlErr } = await supabase.storage
+        .from(BUCKET).createSignedUrl(btn.dataset.download, 300);
+      if (urlErr) { showToast('Download failed', urlErr.message, 'error'); return; }
+      const a = document.createElement('a');
+      a.href = urlData.signedUrl;
+      a.download = btn.dataset.download.split('/').pop().replace(/^\d+_/, '');
+      a.click();
+    });
+  });
+
+  list.querySelectorAll('[data-remove]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this file? This cannot be undone.')) return;
+      const { error: removeErr } = await supabase.storage.from(BUCKET).remove([btn.dataset.remove]);
+      if (removeErr) { showToast('Delete failed', removeErr.message, 'error'); return; }
+      showToast('File deleted', '', 'info');
+      loadUploads();
+    });
+  });
+}
+
+async function handleUpload(file) {
+  if (!file) return;
+  if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+    showToast('Invalid file type', 'Please upload a PDF file.', 'error');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('File too large', 'Maximum file size is 10 MB.', 'error');
+    return;
+  }
+
+  const path = `${userId}/${Date.now()}_${file.name}`;
+  const zone = document.getElementById('uploadZone');
+  zone.style.opacity = '0.6';
+  zone.style.pointerEvents = 'none';
+
+  const { error } = await supabase.storage.from(BUCKET).upload(path, file);
+  zone.style.opacity = '';
+  zone.style.pointerEvents = '';
+
+  if (error) { showToast('Upload failed', error.message, 'error'); return; }
+  showToast('Uploaded!', file.name, 'success');
+  loadUploads();
+}
+
+const uploadZone = document.getElementById('uploadZone');
+const uploadInput = document.getElementById('uploadInput');
+
+uploadZone.addEventListener('click', () => uploadInput.click());
+uploadInput.addEventListener('change', () => handleUpload(uploadInput.files[0]));
+
+uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  handleUpload(e.dataTransfer.files[0]);
+});
+
+loadUploads();
