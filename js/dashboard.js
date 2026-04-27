@@ -104,7 +104,14 @@ function renderTable(invoices) {
 
   // Mark as Paid handlers
   tbody.querySelectorAll('[data-markpaid]').forEach(btn => {
-    btn.addEventListener('click', () => openPaidModal(btn.dataset.markpaid));
+    btn.addEventListener('click', () => {
+      const inv = allInvoices.find(i => i.id === btn.dataset.markpaid);
+      if (!inv?.emailed_at) {
+        showToast('Email required', 'Send the invoice to the client first before marking as paid.', 'error');
+        return;
+      }
+      openPaidModal(btn.dataset.markpaid);
+    });
   });
 
   // Delete handlers
