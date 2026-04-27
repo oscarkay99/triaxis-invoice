@@ -201,8 +201,7 @@ function renderSidebar(inv) {
     </div>
   `;
 
-  // Set today as default paid date
-  document.getElementById('paidDate').value = new Date().toISOString().split('T')[0];
+
 }
 
 async function load() {
