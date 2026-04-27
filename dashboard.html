@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — TriAxis Invoice</title>
   <meta name="robots" content="noindex, nofollow" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -129,8 +129,14 @@
         <label>Payment Date</label>
         <input type="date" id="modalPaidDate" />
       </div>
+      <div id="modalReceiptRow" style="display:none;margin-bottom:16px;padding:12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.875rem;font-weight:500;">
+          <input type="checkbox" id="modalSendReceipt" style="width:16px;height:16px;accent-color:var(--success);" />
+          Email receipt to client
+        </label>
+      </div>
       <div style="display:flex;gap:10px;">
-        <button class="btn btn-success" id="modalConfirmBtn" style="flex:1;justify-content:center;">Confirm</button>
+        <button class="btn btn-success" id="modalConfirmBtn" style="flex:1;justify-content:center;">Confirm Payment</button>
         <button class="btn btn-outline" id="modalCancelBtn">Cancel</button>
       </div>
     </div>

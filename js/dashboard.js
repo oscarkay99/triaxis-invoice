@@ -1,5 +1,9 @@
 import { supabase } from './supabase.js';
 import { requireAuth, renderUser, logout } from './guard.js';
+import { getPDFBase64 } from './pdf.js';
+
+const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
+const WEBHOOK_TOKEN = import.meta.env.VITE_WEBHOOK_TOKEN;
 
 const session = await requireAuth();
 if (!session) throw new Error('Not authenticated');
@@ -96,6 +100,7 @@ function renderTable(invoices) {
           <a href="/view.html?id=${inv.id}" class="btn btn-outline btn-sm">View</a>
           <a href="/create.html?id=${inv.id}" class="btn btn-outline btn-sm">Edit</a>
           ${inv.status !== 'paid' && inv.emailed_at ? `<button class="btn btn-success btn-sm" data-markpaid="${inv.id}">Mark Paid</button>` : ''}
+          ${inv.status === 'paid' && inv.client_email ? `<button class="btn btn-outline btn-sm" data-receipt="${inv.id}">Email Receipt</button>` : ''}
           <button class="btn btn-danger btn-sm" data-delete="${inv.id}">Delete</button>
         </div>
       </td>
@@ -111,6 +116,37 @@ function renderTable(invoices) {
         return;
       }
       openPaidModal(btn.dataset.markpaid);
+    });
+  });
+
+  // Email Receipt handlers
+  tbody.querySelectorAll('[data-receipt]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const inv = allInvoices.find(i => i.id === btn.dataset.receipt);
+      if (!inv) return;
+      btn.textContent = 'Sending…';
+      btn.disabled = true;
+      try {
+        const pdfBase64 = await getPDFBase64(inv, true);
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST', mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'receipt', token: WEBHOOK_TOKEN,
+            invoice_number: inv.invoice_number,
+            client_name: inv.client_name,
+            client_email: inv.client_email,
+            total: inv.total, currency: inv.currency,
+            pdf_base64: pdfBase64,
+          }),
+        });
+        showToast('Receipt sent!', `Emailed to ${inv.client_email}`, 'success');
+      } catch {
+        showToast('Send failed', 'Could not send the receipt. Please try again.', 'error');
+      } finally {
+        btn.textContent = 'Email Receipt';
+        btn.disabled = false;
+      }
     });
   });
 
@@ -174,6 +210,9 @@ document.getElementById('modalPaidDate').value = new Date().toISOString().split(
 function openPaidModal(invoiceId) {
   paidTargetId = invoiceId;
   document.getElementById('modalPaidDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modalSendReceipt').checked = false;
+  const inv = allInvoices.find(i => i.id === invoiceId);
+  document.getElementById('modalReceiptRow').style.display = inv?.client_email ? 'block' : 'none';
   paidModal.style.display = 'flex';
 }
 
@@ -190,6 +229,9 @@ document.getElementById('modalConfirmBtn').addEventListener('click', async () =>
   if (!paidTargetId) return;
   const method = document.getElementById('modalPaymentMethod').value;
   const paidAt = new Date(document.getElementById('modalPaidDate').value).toISOString();
+  const sendReceipt = document.getElementById('modalSendReceipt').checked;
+  const inv = allInvoices.find(i => i.id === paidTargetId);
+
   const { error } = await supabase
     .from('invoices')
     .update({ status: 'paid', payment_method: method, paid_at: paidAt })
@@ -199,6 +241,28 @@ document.getElementById('modalConfirmBtn').addEventListener('click', async () =>
   if (error) { showToast('Update failed', error.message, 'error'); return; }
   showToast('Marked as paid', `Payment recorded via ${method}`, 'success');
   loadInvoices();
+
+  if (sendReceipt && inv?.client_email) {
+    try {
+      const updatedInv = { ...inv, status: 'paid', payment_method: method, paid_at: paidAt };
+      const pdfBase64 = await getPDFBase64(updatedInv, true);
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'receipt', token: WEBHOOK_TOKEN,
+          invoice_number: inv.invoice_number,
+          client_name: inv.client_name,
+          client_email: inv.client_email,
+          total: inv.total, currency: inv.currency,
+          pdf_base64: pdfBase64,
+        }),
+      });
+      showToast('Receipt sent!', `Emailed to ${inv.client_email}`, 'success');
+    } catch {
+      showToast('Receipt failed', 'Payment recorded but receipt could not be sent.', 'error');
+    }
+  }
 });
 
 // ===== UPLOAD =====
