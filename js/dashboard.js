@@ -100,7 +100,14 @@ function renderTable(invoices) {
           <a href="/view.html?id=${inv.id}" class="btn btn-outline btn-sm">View</a>
           <a href="/create.html?id=${inv.id}" class="btn btn-outline btn-sm">Edit</a>
           ${inv.status !== 'paid' && inv.emailed_at ? `<button class="btn btn-success btn-sm" data-markpaid="${inv.id}">Mark Paid</button>` : ''}
-          ${inv.status === 'paid' && inv.client_email ? `<button class="btn btn-outline btn-sm" data-receipt="${inv.id}">Email Receipt</button>` : ''}
+          ${inv.status === 'paid' && inv.client_email
+            ? inv.receipt_sent_at
+              ? `<button class="btn btn-success btn-sm" disabled style="opacity:0.85;cursor:default;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  Receipt Sent
+                </button>`
+              : `<button class="btn btn-outline btn-sm" data-receipt="${inv.id}">Email Receipt</button>`
+            : ''}
           <button class="btn btn-danger btn-sm" data-delete="${inv.id}">Delete</button>
         </div>
       </td>
@@ -140,10 +147,11 @@ function renderTable(invoices) {
             pdf_base64: pdfBase64,
           }),
         });
+        await supabase.from('invoices').update({ receipt_sent_at: new Date().toISOString() }).eq('id', inv.id);
         showToast('Receipt sent!', `Emailed to ${inv.client_email}`, 'success');
+        loadInvoices();
       } catch {
         showToast('Send failed', 'Could not send the receipt. Please try again.', 'error');
-      } finally {
         btn.textContent = 'Email Receipt';
         btn.disabled = false;
       }
@@ -258,7 +266,9 @@ document.getElementById('modalConfirmBtn').addEventListener('click', async () =>
           pdf_base64: pdfBase64,
         }),
       });
+      await supabase.from('invoices').update({ receipt_sent_at: new Date().toISOString() }).eq('id', inv.id);
       showToast('Receipt sent!', `Emailed to ${inv.client_email}`, 'success');
+      loadInvoices();
     } catch {
       showToast('Receipt failed', 'Payment recorded but receipt could not be sent.', 'error');
     }
