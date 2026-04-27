@@ -489,3 +489,13 @@ textarea { resize: vertical; min-height: 80px; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .form-grid-3 { grid-template-columns: 1fr; }
 }
+
+/* ===== FOOTER ===== */
+.site-footer {
+  text-align: center;
+  padding: 24px 32px;
+  margin-top: 48px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
