@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { requireAuth, renderUser, logout } from './guard.js';
 import { downloadPDF, previewPDF, getPDFBase64 } from './pdf.js';
+import { sanitize } from './utils.js';
 
 const session = await requireAuth();
 if (!session) throw new Error('Not authenticated');
@@ -75,7 +76,7 @@ function renderPreview(inv) {
         <div class="rcp-title-block">
           ${isPaid ? '<div class="rcp-paid-stamp">PAID</div>' : ''}
           <div class="rcp-title">${title}</div>
-          <div class="rcp-number"># ${inv.invoice_number}</div>
+          <div class="rcp-number"># ${sanitize(inv.invoice_number)}</div>
         </div>
       </div>
 
@@ -87,34 +88,34 @@ function renderPreview(inv) {
           <div class="rcp-billing-cols">
             <div>
               <div class="rcp-field-label">Bill To</div>
-              <div class="rcp-client-name">${inv.client_name || '—'}</div>
-              ${inv.client_company ? `<div class="rcp-client-detail">${inv.client_company}</div>` : ''}
-              ${inv.client_email ? `<div class="rcp-client-detail">${inv.client_email}</div>` : ''}
-              ${inv.client_phone ? `<div class="rcp-client-detail">${inv.client_phone}</div>` : ''}
-              ${inv.client_address ? `<div class="rcp-client-detail">${inv.client_address}</div>` : ''}
+              <div class="rcp-client-name">${sanitize(inv.client_name) || '—'}</div>
+              ${inv.client_company ? `<div class="rcp-client-detail">${sanitize(inv.client_company)}</div>` : ''}
+              ${inv.client_email ? `<div class="rcp-client-detail">${sanitize(inv.client_email)}</div>` : ''}
+              ${inv.client_phone ? `<div class="rcp-client-detail">${sanitize(inv.client_phone)}</div>` : ''}
+              ${inv.client_address ? `<div class="rcp-client-detail">${sanitize(inv.client_address)}</div>` : ''}
             </div>
             <div>
               <div class="rcp-field-label">Ship To</div>
-              <div class="rcp-client-name">${inv.ship_to || inv.client_name || '—'}</div>
+              <div class="rcp-client-name">${sanitize(inv.ship_to || inv.client_name) || '—'}</div>
             </div>
           </div>
         </div>
         <div class="rcp-meta-table">
           <div class="rcp-meta-row">
             <span class="rcp-meta-label">Date</span>
-            <span class="rcp-meta-value">${inv.issue_date || '—'}</span>
+            <span class="rcp-meta-value">${sanitize(inv.issue_date) || '—'}</span>
           </div>
           <div class="rcp-meta-row">
             <span class="rcp-meta-label">Payment Terms</span>
-            <span class="rcp-meta-value">${inv.payment_terms || '—'}</span>
+            <span class="rcp-meta-value">${sanitize(inv.payment_terms) || '—'}</span>
           </div>
           <div class="rcp-meta-row">
             <span class="rcp-meta-label">Due Date</span>
-            <span class="rcp-meta-value">${inv.due_date || '—'}</span>
+            <span class="rcp-meta-value">${sanitize(inv.due_date) || '—'}</span>
           </div>
           <div class="rcp-meta-row">
             <span class="rcp-meta-label">PO Number</span>
-            <span class="rcp-meta-value">${inv.po_number || '—'}</span>
+            <span class="rcp-meta-value">${sanitize(inv.po_number) || '—'}</span>
           </div>
           <div class="rcp-meta-row rcp-balance-row">
             <span class="rcp-balance-label">Balance Due</span>
@@ -137,7 +138,7 @@ function renderPreview(inv) {
           <tbody>
             ${items.map(item => `
               <tr>
-                <td>${item.description || '—'}</td>
+                <td>${sanitize(item.description) || '—'}</td>
                 <td style="text-align:center">${item.qty}</td>
                 <td style="text-align:right">${fmt(item.unit_price, inv.currency)}</td>
                 <td style="text-align:right;font-weight:600">${fmt(item.qty * item.unit_price, inv.currency)}</td>
@@ -162,13 +163,13 @@ function renderPreview(inv) {
       ${inv.notes ? `
         <div class="rcp-note-block">
           <div class="rcp-note-label">Notes:</div>
-          <div class="rcp-note-text">${inv.notes}</div>
+          <div class="rcp-note-text">${sanitize(inv.notes)}</div>
         </div>
       ` : ''}
       ${inv.terms ? `
         <div class="rcp-note-block">
           <div class="rcp-note-label">Terms:</div>
-          <div class="rcp-note-text">${inv.terms}</div>
+          <div class="rcp-note-text">${sanitize(inv.terms)}</div>
         </div>
       ` : ''}
 
@@ -188,11 +189,11 @@ function renderSidebar(inv) {
   document.getElementById('btnEmailReceipt').style.display = isPaid ? 'flex' : 'none';
 
   document.getElementById('sideInfo').innerHTML = `
-    <div class="info-row"><span class="info-label">Invoice #</span><span class="info-value">${inv.invoice_number}</span></div>
-    <div class="info-row"><span class="info-label">Client</span><span class="info-value">${inv.client_name}</span></div>
+    <div class="info-row"><span class="info-label">Invoice #</span><span class="info-value">${sanitize(inv.invoice_number)}</span></div>
+    <div class="info-row"><span class="info-label">Client</span><span class="info-value">${sanitize(inv.client_name)}</span></div>
     <div class="info-row"><span class="info-label">Total</span><span class="info-value" style="color:var(--navy);font-weight:800">${fmt(inv.total, inv.currency)}</span></div>
-    <div class="info-row"><span class="info-label">Due</span><span class="info-value">${inv.due_date || '—'}</span></div>
-    ${isPaid ? `<div class="info-row"><span class="info-label">Paid via</span><span class="info-value">${inv.payment_method || '—'}</span></div>` : ''}
+    <div class="info-row"><span class="info-label">Due</span><span class="info-value">${sanitize(inv.due_date) || '—'}</span></div>
+    ${isPaid ? `<div class="info-row"><span class="info-label">Paid via</span><span class="info-value">${sanitize(inv.payment_method) || '—'}</span></div>` : ''}
     <div class="info-row">
       <span class="info-label">Emailed</span>
       <span class="info-value" style="color:${inv.emailed_at ? 'var(--success)' : 'var(--muted)'}">

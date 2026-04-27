@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { requireAuth, renderUser, logout } from './guard.js';
 import { getPDFBase64 } from './pdf.js';
+import { sanitize } from './utils.js';
 
 const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 const WEBHOOK_TOKEN = import.meta.env.VITE_WEBHOOK_TOKEN;
@@ -80,10 +81,10 @@ function renderTable(invoices) {
 
   tbody.innerHTML = invoices.map(inv => `
     <tr>
-      <td class="td-number">${inv.invoice_number}</td>
+      <td class="td-number">${sanitize(inv.invoice_number)}</td>
       <td>
-        <div style="font-weight:600">${inv.client_name}</div>
-        ${inv.client_company ? `<div style="font-size:0.78rem;color:var(--muted)">${inv.client_company}</div>` : ''}
+        <div style="font-weight:600">${sanitize(inv.client_name)}</div>
+        ${inv.client_company ? `<div style="font-size:0.78rem;color:var(--muted)">${sanitize(inv.client_company)}</div>` : ''}
       </td>
       <td class="td-amount">${fmt(inv.total, inv.currency)}</td>
       <td>
@@ -295,7 +296,7 @@ async function loadUploads() {
       <div class="upload-item-icon">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       </div>
-      <div class="upload-item-name" title="${file.name}">${file.name.replace(/^\d+_/, '')}</div>
+      <div class="upload-item-name" title="${sanitize(file.name)}">${sanitize(file.name.replace(/^\d+_/, ''))}</div>
       <div class="upload-item-date">${new Date(file.created_at).toLocaleDateString()}</div>
       <div class="upload-item-actions">
         <button class="btn btn-outline btn-sm" data-download="${userId}/${file.name}">Download</button>
