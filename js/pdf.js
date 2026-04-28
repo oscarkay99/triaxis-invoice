@@ -5,7 +5,6 @@ const DARK = [30, 30, 30];
 const GRAY = [120, 120, 120];
 const LIGHT_GRAY = [210, 210, 210];
 const NAVY = [0, 45, 85];
-
 function fmt(amount, currency) {
   const sym = currency === 'GHS' ? '₵' : '$';
   return `${sym}${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -25,6 +24,22 @@ async function loadLogo() {
   }
 }
 
+function drawWatermark(doc, logoData, pageWidth, pageHeight) {
+  if (!logoData) return;
+
+  const width = 120;
+  const height = 60;
+  const x = (pageWidth - width) / 2;
+  const y = (pageHeight - height) / 2;
+
+  doc.saveGraphicsState();
+  if (typeof doc.setGState === 'function') {
+    doc.setGState(new doc.GState({ opacity: 0.07 }));
+  }
+  doc.addImage(logoData, 'PNG', x, y, width, height, undefined, 'FAST', 28);
+  doc.restoreGraphicsState();
+}
+
 export async function generatePDF(invoice, isReceipt = false) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
@@ -35,6 +50,8 @@ export async function generatePDF(invoice, isReceipt = false) {
   const title = isReceipt ? 'RECEIPT' : 'INVOICE';
   const amountPaid = Number(invoice.amount_paid) || 0;
   const balanceDue = Math.max(0, Number(invoice.total) - amountPaid);
+
+  drawWatermark(doc, logoData, W, H);
 
   // ── HEADER: logo left, title right ──────────────────────────────
   if (logoData) {

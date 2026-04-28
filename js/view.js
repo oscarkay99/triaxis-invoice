@@ -62,7 +62,8 @@ function renderPreview(inv) {
   const title = isPaid ? 'RECEIPT' : 'INVOICE';
 
   document.getElementById('invoicePreview').innerHTML = `
-    <div class="rcp-wrap">
+    <div class="rcp-wrap rcp-watermark">
+      <img src="/assets/logo.png" alt="" class="rcp-watermark-logo" aria-hidden="true" />
 
       <!-- TOP: logo + title -->
       <div class="rcp-top">
